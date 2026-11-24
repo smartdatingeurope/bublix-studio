@@ -1,0 +1,222 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bublix Studio Online — редактор мультфильмов</title><style>*{box-sizing:border-box}body{margin:0;background:#10121c;color:#f5f6ff;font:15px Segoe UI,Arial}header{padding:15px 20px;background:#20253a;display:flex;justify-content:space-between;align-items:center}h1{font-size:21px;margin:0}.app{display:flex;height:calc(100vh - 60px)}aside{width:285px;background:#191e30;padding:18px;overflow:auto}button,label.file{display:block;width:100%;background:#7259ee;color:white;border:0;border-radius:8px;padding:12px;margin:10px 0;cursor:pointer;text-align:center;font:inherit}button:hover,label.file:hover{background:#8d7aff}input[type=file]{display:none}input[type=color]{width:100%;height:42px}input[type=range]{width:100%}small{color:#aab2cc;line-height:1.5}main{flex:1;position:relative;min-width:0}#render{width:100%;height:100%;touch-action:none}#hint{position:absolute;bottom:12px;left:16px;color:#ddd;background:#15182999;padding:8px;border-radius:6px}#status{color:#8fe8c1;font-size:13px}h3{margin:22px 0 8px}hr{border:0;border-top:1px solid #343b55}@media(max-width:650px){.app{flex-direction:column}aside{width:100%;height:300px}main{height:calc(100vh - 360px)}}</style></head><body><header><h1>🎬 Bublix Studio Online <small>3D + монтаж</small></h1><span id="status">Загрузка движка…</span></header><div class="app"><aside><label class="file">📂 Открыть 3D-модель (.glb)<input id="file" type="file" accept=".glb,.gltf"></label><button id="demo">🐵 Тестовая 3D-фигура</button><hr><h3>🧱 Создать объект</h3><button id="cube">Добавить куб</button><button id="ball">Добавить шар</button><button id="cylinder">Добавить цилиндр</button><button id="torus">Добавить кольцо</button><button id="ground">Добавить пол</button><hr><h3>🛠️ Положение и размер</h3><small>Выбери объект в списке деталей и измени параметры.</small><div id="transforms"></div><button id="delete">Удалить выбранный объект</button><hr><h3>🎬 Ключевые кадры</h3><small>Время анимации, секунды</small><input id="time" type="range" min="0" max="30" step="0.1" value="0"><span id="timeLabel">0.0 с</span><button id="keyframe">➕ Запомнить положение объекта</button><button id="play">▶ Воспроизвести движение</button><button id="pause">⏸ Пауза</button><small>Выставь время, перемести объект, запомни положение. Повтори на другом времени — объект плавно переместится между кадрами.</small><hr><h3>💾 Проект и звук</h3><button id="saveProject">Сохранить проект JSON</button><label class="file">Открыть проект JSON<input id="openProject" type="file" accept=".json,application/json"></label><label class="file">Добавить музыку (MP3/WAV)<input id="audioFile" type="file" accept="audio/*"></label><audio id="audio" controls style="width:100%;margin:5px 0"></audio><hr><h3>🖼️ Цвета по картинке</h3><label class="file">Загрузить картинку (PNG/JPG)<input id="reference" type="file" accept="image/png,image/jpeg,image/webp"></label><div id="referencePreview" style="display:none;margin:8px 0"><img id="referenceImg" alt="Загруженный образец" style="width:100%;max-height:230px;object-fit:contain;border-radius:8px;border:1px solid #64708d"><div style="font-size:12px;margin-top:5px">Образец цветов — виден прямо в программе</div></div><div id="palette" style="display:flex;gap:5px;flex-wrap:wrap;padding:7px 0"></div><small>Программа определяет основные цвета изображения. Выбери цвет, затем деталь модели и нажми «Применить к детали».</small><button id="smartPaint" style="background:#18a88e">🎨 Подобрать цвета по картинке — одним нажатием</button><button id="smartUndo">↩ Отменить автоматическую раскраску</button><button id="autoPaint">✨ Автоцвет по названию деталей</button><small>Подбирает цвет для отдельных мешей по названиям (глаза, уши, лапы и т. д.) и палитре образца. Если модель цельная, детали определить нельзя.</small><hr><h3>🧠 Локальный ИИ — сценарист</h3><small>Бесплатная модель Qwen3 через Ollama на твоём компьютере. Создаёт сценарии, диалоги и идеи для мультфильмов; не создаёт видео.</small><textarea id="localPrompt" rows="4" placeholder="Например: Придумай три смешные сцены с Бубликсом для детей 3–9 лет" style="width:100%;padding:9px;background:#303650;color:white;border:1px solid #69718c;border-radius:7px"></textarea><button id="localGenerate">✨ Придумать сценарий</button><div id="localResult" style="white-space:pre-wrap;font-size:12px;line-height:1.5;background:#252c44;border-radius:8px;padding:10px;display:none"></div><small>Ollama должна быть запущена на этом компьютере. Для доступа с GitHub Pages может потребоваться разрешить адрес сайта в настройке OLLAMA_ORIGINS и перезапустить Ollama.</small><hr><h3>🤖 ИИ-помощник по рисунку</h3><small>Подключение к совместимому с OpenAI Vision API. Требуется доступ к модели и её API-ключ. Без подключения остальные функции студии работают как раньше. Ключ используется только в текущем окне и не сохраняется в проекте.</small><input id="aiEndpoint" placeholder="URL API /chat/completions" style="width:100%;padding:8px;margin:5px 0;background:#303650;color:white;border:1px solid #69718c"><input id="aiModel" placeholder="Название vision-модели" style="width:100%;padding:8px;margin:5px 0;background:#303650;color:white;border:1px solid #69718c"><input id="aiKey" type="password" autocomplete="off" placeholder="API-ключ (необязательно для локального сервера)" style="width:100%;padding:8px;margin:5px 0;background:#303650;color:white;border:1px solid #69718c"><button id="aiAnalyze">🤖 ИИ: распознать детали и цвета</button><div id="aiResult" style="white-space:pre-wrap;font-size:12px;line-height:1.5;background:#252c44;border-radius:8px;padding:10px;display:none"></div><small>ИИ анализирует изображение и выдаёт схему раскраски. Применить её к цельной сетке GLB без отдельных деталей автоматически пока нельзя.</small><hr><h3>🎨 Раскраска</h3><small>Выбери деталь (если модель разделена на части):</small><select id="part" style="width:100%;padding:9px;background:#303650;color:white;border:0;border-radius:7px"><option value="all">Вся модель</option></select><button id="partApply">Применить к детали</button><small>Цветовой оттенок всей модели. Исходные текстуры сохраняются.</small><input id="color" type="color" value="#ffffff"><button id="apply">Применить оттенок</button><button id="reset">Вернуть исходные цвета</button><hr><h3>🎞️ Простая анимация</h3><button id="spin">▶ Вращать персонажа</button><small>Скорость вращения</small><input id="speed" type="range" min="1" max="10" value="3"><button id="shot">📷 Сохранить кадр PNG</button><button id="record">⏺ Начать запись WebM</button><button id="stopRecord" disabled>⏹ Остановить и сохранить</button><hr><h3>🎞️ Монтаж клипов</h3><label class="file">Добавить видеофрагменты<input id="clips" type="file" accept="video/*" multiple></label><div id="clipList" style="font-size:12px;line-height:1.7"></div><button id="renderMontage">▶ Собрать видео из клипов</button><button id="stopMontage" disabled>⏹ Завершить запись монтажа</button><small>Фрагменты воспроизводятся по порядку и записываются в единый файл. Звук клипов включается в запись, когда браузер это поддерживает. Для длинных роликов потребуется достаточно памяти.</small><hr><small>Автоопределение цветов не означает автоматическое распознавание частей персонажа. Работает без Python. При открытии требуется интернет для загрузки бесплатного 3D-движка Babylon.js. Точное определение отдельных деталей цельной модели пока недоступно. Монтаж клипов доступен в экспериментальном режиме. MP4 экспортируется только при поддержке кодека браузером, иначе WebM.</small><hr><h3>☁️ Bublix Cloud — Supabase</h3><small>Вход и сохранение проектов в облаке. Используй свой адрес электронной почты и пароль. Сначала создай таблицу по инструкции.</small><input id="cloudEmail" type="email" autocomplete="email" placeholder="Электронная почта" style="width:100%;padding:10px;margin:5px 0;background:#303650;color:white;border:1px solid #69718c;border-radius:6px"><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="Пароль" style="width:100%;padding:10px;margin:5px 0;background:#303650;color:white;border:1px solid #69718c;border-radius:6px"><button id="cloudSignup">Создать аккаунт</button><button id="cloudLogin">Войти</button><button id="cloudLogout" disabled>Выйти</button><div id="cloudStatus" style="font-size:12px;white-space:pre-wrap;color:#aee9cb">Не выполнен вход</div><button id="cloudSave">☁️ Сохранить проект в облаке</button><button id="cloudList">📂 Мои облачные проекты</button><div id="cloudProjects" style="font-size:12px"></div></aside><main><canvas id="render"></canvas><div id="montageOverlay" style="display:none;position:absolute;inset:0;background:#000;align-items:center;justify-content:center"><video id="montageVideo" playsinline style="width:100%;height:100%;object-fit:contain"></video></div><div id="hint">Левая кнопка — вращение · Колёсико — масштаб</div></main></div><script src="https://cdn.babylonjs.com/babylon.js"></script><script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script><script>
+let referenceColors=[],clipFiles=[],montageRecorder=null,montageStopped=false;const status=document.getElementById('status'),canvas=document.getElementById('render');let engine,scene,root,spin=false,original=[],recorder=null,recordStream=null,playing=false,playStart=0,keys={},audioCtx=null,audioSource=null,audioDest=null;const $=id=>document.getElementById(id);function msg(s){status.textContent=s}function init(){if(!window.BABYLON){msg('Нет доступа к 3D-движку. Проверь интернет и перезапусти файл.');return}engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true});scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.08,.10,.16,1);let camera=new BABYLON.ArcRotateCamera('camera',Math.PI/2,Math.PI/2.2,5,BABYLON.Vector3.Zero(),scene);camera.attachControl(canvas,true);camera.wheelPrecision=55;camera.lowerRadiusLimit=.5;camera.upperRadiusLimit=100;new BABYLON.HemisphericLight('light',new BABYLON.Vector3(0,1,0),scene).intensity=1.8;const light=new BABYLON.DirectionalLight('direction',new BABYLON.Vector3(-1,-2,-1),scene);light.intensity=1.1;engine.runRenderLoop(()=>{if(spin&&root)root.rotation.y+=.003*Number($('speed').value);if(playing){let t=(performance.now()-playStart)/1000;if(t>30){playing=false;$('time').value=30}else $('time').value=t;applyKeys(Number($('time').value));$('timeLabel').textContent=Number($('time').value).toFixed(1)+' с'}scene.render()});window.addEventListener('resize',()=>engine.resize());msg('Готово — открой GLB');$('demo').onclick=()=>{clear();root=new BABYLON.TransformNode('figure',scene);const mesh=BABYLON.MeshBuilder.CreateSphere('figure',{diameter:2,segments:32},scene);mesh.parent=root;const mat=new BABYLON.StandardMaterial('purple',scene);mat.diffuseColor=new BABYLON.Color3(.9,.6,.2);mesh.material=mat;fit();saveColors();updateParts();msg('Тестовая фигура открыта')};$('file').onchange=async e=>{let f=e.target.files[0];if(!f)return;msg('Открываю '+f.name+'…');try{clear();const url=URL.createObjectURL(f);const result=await BABYLON.SceneLoader.ImportMeshAsync(null,'',url,scene,undefined,'.glb');URL.revokeObjectURL(url);root=new BABYLON.TransformNode('character',scene);for(const m of result.meshes){if(!m.parent)m.parent=root}fit();saveColors();updateParts();msg('Открыто: '+f.name)}catch(err){msg('Ошибка GLB: '+err.message)}};$('apply').onclick=()=>{if(!root)return;let c=BABYLON.Color3.FromHexString($('color').value);for(let m of scene.meshes){if(m.material){m.material=m.material.clone(m.material.name+'-tint');if(m.material.albedoColor)m.material.albedoColor=c.clone();else if(m.material.diffuseColor)m.material.diffuseColor=c.clone()}}msg('Цвет применён')};$('reset').onclick=()=>{for(let [m,mat] of original)if(!m.isDisposed())m.material=mat;$('color').value='#ffffff';msg('Исходные цвета возвращены')};$('spin').onclick=()=>{spin=!spin;$('spin').textContent=spin?'⏸ Остановить вращение':'▶ Вращать персонажа'};$('shot').onclick=()=>{BABYLON.Tools.CreateScreenshotUsingRenderTarget(engine,scene.activeCamera,{width:1280,height:720},data=>download(data,'Bublix_frame.png'))};$('cube').onclick=()=>addShape('cube');$('ball').onclick=()=>addShape('ball');$('cylinder').onclick=()=>addShape('cylinder');$('torus').onclick=()=>addShape('torus');$('ground').onclick=()=>addShape('ground');$('partApply').onclick=()=>{if(!root){msg('Сначала открой модель');return}const chosen=$('part').value,c=BABYLON.Color3.FromHexString($('color').value);let count=0;for(const m of scene.meshes){if(chosen!=='all'&&m.uniqueId.toString()!==chosen)continue;if(!m.material)continue;m.material=m.material.clone(m.material.name+'-paint');if(m.material.albedoColor)m.material.albedoColor=c.clone();else if(m.material.diffuseColor)m.material.diffuseColor=c.clone();count++}msg('Окрашено частей: '+count)};$('reference').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const img=new Image(),url=URL.createObjectURL(f);img.onload=()=>{const c=document.createElement('canvas');c.width=120;c.height=120;const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,120,120);const d=ctx.getImageData(0,0,120,120).data,counts=new Map();for(let i=0;i<d.length;i+=16){if(d[i+3]<128)continue;const r=Math.min(255,Math.round(d[i]/32)*32),g=Math.min(255,Math.round(d[i+1]/32)*32),b=Math.min(255,Math.round(d[i+2]/32)*32);const key=[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');counts.set(key,(counts.get(key)||0)+1)}const colors=[...counts.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);const picked=[];for(const hex of colors){let rgb=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));if(picked.every(h=>{let v=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16));return Math.hypot(...rgb.map((x,i)=>x-v[i]))>65}))picked.push(hex);if(picked.length===10)break}referenceColors=picked.map(h=>'#'+h);const el=$('palette');el.innerHTML='';for(const hex of picked){const b=document.createElement('button');b.style.cssText='width:37px;height:37px;display:inline-block;padding:0;margin:2px;border:2px solid white;background:#'+hex;b.title='#'+hex;b.onclick=()=>{$('color').value='#'+hex;msg('Выбран цвет #'+hex)};el.appendChild(b)}URL.revokeObjectURL(url);msg('Найдено '+picked.length+' цветов. Выбери цвет и деталь.')};img.onerror=()=>msg('Не удалось прочитать картинку');img.src=url}catch(err){msg('Ошибка картинки: '+err.message)}};$('autoPaint').onclick=()=>{if(!root){msg('Сначала загрузи GLB');return}if(!referenceColors.length){msg('Сначала загрузи картинку-образец');return}let changed=0;const types=[[/eye|глаз/i,[0,90,220]],[/ear|ух|nose|нос|tongue|язык/i,[245,140,165]],[/hair|tuft|волос|хохол|arm|hand|leg|foot|лап|рук|ног/i,[145,75,190]],[/belly|живот/i,[250,200,200]],[/body|fur|тело|шерсть/i,[240,190,45]]];for(const m of scene.meshes){if(!m.material)continue;let type=types.find(([re])=>re.test(m.name));if(!type)continue;let best=referenceColors.map(h=>({h,d:Math.hypot(...[0,2,4].map((i,j)=>parseInt(h.slice(i+1+i,i+3+i),16)-type[1][j]))})).sort((a,b)=>a.d-b.d)[0];if(!best)continue;m.material=m.material.clone(m.name+'-auto');if(m.material.albedoColor)m.material.albedoColor=BABYLON.Color3.FromHexString(best.h);else if(m.material.diffuseColor)m.material.diffuseColor=BABYLON.Color3.FromHexString(best.h);changed++}msg(changed?'Автоматически подобрано деталей: '+changed:'У модели нет подписанных отдельных деталей. Выбери деталь вручную.')};
+$('clips').onchange=e=>{clipFiles.push(...Array.from(e.target.files).filter(f=>f.type.startsWith('video/')));$('clipList').innerHTML='';clipFiles.forEach((f,i)=>{const r=document.createElement('div');r.textContent=(i+1)+'. '+f.name+' ';const up=document.createElement('button');up.textContent='↑';up.style.cssText='display:inline;width:auto;padding:2px 7px;margin:2px';up.onclick=()=>{if(i){[clipFiles[i-1],clipFiles[i]]=[clipFiles[i],clipFiles[i-1]];refreshClips()}};const del=document.createElement('button');del.textContent='×';del.style.cssText=up.style.cssText;del.onclick=()=>{clipFiles.splice(i,1);refreshClips()};r.append(up,del);$('clipList').append(r)});msg('Клипов в очереди: '+clipFiles.length)};
+function refreshClips(){const files=clipFiles.slice();clipFiles=[];$('clipList').innerHTML='';for(const f of files){clipFiles.push(f);const row=document.createElement('div');row.textContent=clipFiles.length+'. '+f.name;const del=document.createElement('button');del.textContent='Удалить';del.style.cssText='display:inline;width:auto;padding:3px;margin:3px';del.onclick=()=>{clipFiles=clipFiles.filter(x=>x!==f);refreshClips()};row.append(del);$('clipList').append(row)}}
+$('renderMontage').onclick=async()=>{if(!clipFiles.length){msg('Добавь хотя бы один клип');return}if(!window.MediaRecorder){msg('Браузер не поддерживает запись');return}montageStopped=false;const overlay=$('montageOverlay'),v=$('montageVideo');overlay.style.display='flex';$('renderMontage').disabled=true;$('stopMontage').disabled=false;const c=document.createElement('canvas');c.width=1280;c.height=720;const cx=c.getContext('2d');let drawing=true;const draw=()=>{if(!drawing)return;cx.fillStyle='black';cx.fillRect(0,0,c.width,c.height);if(v.readyState>=2){let scale=Math.min(c.width/v.videoWidth,c.height/v.videoHeight);if(Number.isFinite(scale)&&scale>0){let w=v.videoWidth*scale,h=v.videoHeight*scale;cx.drawImage(v,(c.width-w)/2,(c.height-h)/2,w,h)}}requestAnimationFrame(draw)};draw();const stream=c.captureStream(30);let ctx,source,dest;try{ctx=new (window.AudioContext||window.webkitAudioContext)();source=ctx.createMediaElementSource(v);dest=ctx.createMediaStreamDestination();source.connect(dest);source.connect(ctx.destination);for(const t of dest.stream.getAudioTracks())stream.addTrack(t);await ctx.resume()}catch(e){msg('Звук монтажа может отсутствовать: '+e.message)}const mp4=MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,mp4a.40.2')?'video/mp4;codecs=avc1.42E01E,mp4a.40.2':MediaRecorder.isTypeSupported('video/mp4')?'video/mp4':null;const mime=mp4|| (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')?'video/webm;codecs=vp8,opus':'video/webm');let chunks=[];try{montageRecorder=new MediaRecorder(stream,{mimeType:mime})}catch(e){drawing=false;overlay.style.display='none';$('renderMontage').disabled=false;msg('Запись монтажа не поддерживается: '+e.message);return}montageRecorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};montageRecorder.onstop=()=>{drawing=false;v.pause();v.removeAttribute('src');v.load();overlay.style.display='none';stream.getTracks().forEach(t=>t.stop());if(ctx)ctx.close();$('renderMontage').disabled=false;$('stopMontage').disabled=true;if(chunks.length){const blob=new Blob(chunks,{type:mime}),url=URL.createObjectURL(blob);download(url,'Bublix_montage.'+(mp4?'mp4':'webm'));setTimeout(()=>URL.revokeObjectURL(url),60000);msg('Монтаж сохранён: '+(mp4?'MP4':'WebM'))}else msg('Запись завершилась без данных')};montageRecorder.start(1000);for(let i=0;i<clipFiles.length&&!montageStopped;i++){const url=URL.createObjectURL(clipFiles[i]);v.src=url;msg('Монтаж: клип '+(i+1)+' из '+clipFiles.length);try{await new Promise((resolve,reject)=>{v.onended=resolve;v.onerror=()=>reject(new Error('Не удалось открыть '+clipFiles[i].name));v.play().catch(reject)})}catch(e){msg(e.message);montageStopped=true}finally{URL.revokeObjectURL(url)}}if(montageRecorder.state==='recording')montageRecorder.stop()};
+$('stopMontage').onclick=()=>{montageStopped=true;$('montageVideo').pause();if(montageRecorder&&montageRecorder.state==='recording')montageRecorder.stop()};
+$('part').addEventListener('change',updateTransforms);
+$('time').oninput=()=>{playing=false;const t=Number($('time').value);$('timeLabel').textContent=t.toFixed(1)+' с';applyKeys(t)};
+$('keyframe').onclick=()=>{const m=selected();if(!m){msg('Выбери объект');return}const t=Number($('time').value);if(!keys[m.name])keys[m.name]=[];keys[m.name]=keys[m.name].filter(k=>Math.abs(k.t-t)>.01);keys[m.name].push({t,p:m.position.asArray(),r:m.rotation.asArray(),s:m.scaling.asArray()});keys[m.name].sort((a,b)=>a.t-b.t);msg('Ключевой кадр '+t.toFixed(1)+' с для '+m.name)};
+$('play').onclick=()=>{playStart=performance.now()-Number($('time').value)*1000;playing=true;msg('Анимация воспроизводится')};
+$('pause').onclick=()=>{playing=false;msg('Пауза')};
+$('delete').onclick=()=>{let m=selected();if(!m){msg('Выбери объект');return}delete keys[m.name];m.dispose();updateParts();msg('Объект удалён')};
+$('saveProject').onclick=()=>{const shapes=scene.meshes.filter(m=>m.metadata&&m.metadata.kind).map(m=>({kind:m.metadata.kind,name:m.name,p:m.position.asArray(),r:m.rotation.asArray(),s:m.scaling.asArray(),color:m.material?.diffuseColor?.toHexString()||'#ffffff'}));const data={version:1,shapes,keys};download(URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),'Bublix_project.json');msg('Проект сохранён (примитивы и анимация)')};
+$('openProject').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let data=JSON.parse(await f.text());clear();keys=data.keys||{};for(let o of data.shapes||[]){let m=createShape(o.kind,o.name);m.position=BABYLON.Vector3.FromArray(o.p);m.rotation=BABYLON.Vector3.FromArray(o.r);m.scaling=BABYLON.Vector3.FromArray(o.s);if(o.color)m.material.diffuseColor=BABYLON.Color3.FromHexString(o.color)}updateParts();fit();msg('Проект открыт')}catch(err){msg('Ошибка проекта: '+err.message)}};
+$('audioFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const a=$('audio');if(a.dataset.url)URL.revokeObjectURL(a.dataset.url);a.dataset.url=URL.createObjectURL(f);a.src=a.dataset.url;msg('Музыка загружена')};
+$('record').onclick=()=>{if(!canvas.captureStream||!window.MediaRecorder){msg('Запись не поддерживается');return}if(recorder&&recorder.state==='recording')return;recordStream=canvas.captureStream(30);const a=$('audio');if(a.src){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(!audioSource){audioSource=audioCtx.createMediaElementSource(a);audioDest=audioCtx.createMediaStreamDestination();audioSource.connect(audioDest);audioSource.connect(audioCtx.destination)}audioCtx.resume();a.currentTime=0;a.play();for(const track of audioDest.stream.getAudioTracks())recordStream.addTrack(track)}catch(e){msg('Видео без аудио: '+e.message)}}const parts=[];try{recorder=new MediaRecorder(recordStream,{mimeType:MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?'video/webm;codecs=vp9':'video/webm'});}catch(e){msg('Ошибка записи: '+e.message);return}recorder.ondataavailable=e=>{if(e.data.size)parts.push(e.data)};recorder.onstop=()=>{const u=URL.createObjectURL(new Blob(parts,{type:'video/webm'}));download(u,'Bublix_clip.webm');setTimeout(()=>URL.revokeObjectURL(u),30000);recordStream.getVideoTracks().forEach(t=>t.stop());$('audio').pause();$('record').disabled=false;$('stopRecord').disabled=true;msg('Видео сохранено')};recorder.start();$('record').disabled=true;$('stopRecord').disabled=false;msg('Идёт запись — нажми «Остановить»')};$('stopRecord').onclick=()=>{if(recorder&&recorder.state==='recording')recorder.stop()};}function selected(){return scene.meshes.find(m=>m.uniqueId.toString()===$('part').value)}
+function updateTransforms(){let m=selected(),el=$('transforms');el.innerHTML='';if(!m)return;for(const [name,prop,axes] of [['Позиция','position',['x','y','z']],['Поворот','rotation',['x','y','z']],['Масштаб','scaling',['x','y','z']]]){const label=document.createElement('small');label.textContent=name;el.appendChild(label);const row=document.createElement('div');row.style.cssText='display:flex;gap:4px;margin:5px 0 10px';for(let axis of axes){const input=document.createElement('input');input.type='number';input.step=prop==='rotation'?'0.1':'0.2';input.value=m[prop][axis].toFixed(2);input.title=axis.toUpperCase();input.style.cssText='width:33%;min-width:0;background:#303650;color:white;border:1px solid #49526b;border-radius:5px;padding:7px';input.onchange=()=>{m[prop][axis]=Number(input.value)||0;msg('Изменено: '+name+' '+axis)};row.appendChild(input)}el.appendChild(row)}}
+function applyKeys(t){for(const [name,frames] of Object.entries(keys)){let m=scene.meshes.find(x=>x.name===name);if(!m||!frames.length)continue;let a=frames[0],b=frames[frames.length-1];for(let i=0;i<frames.length-1;i++)if(t>=frames[i].t&&t<=frames[i+1].t){a=frames[i];b=frames[i+1];break}if(t<=frames[0].t)a=b=frames[0];if(t>=frames[frames.length-1].t)a=b=frames[frames.length-1];let f=a===b?0:(t-a.t)/(b.t-a.t);for(let [prop,k] of [['position','p'],['rotation','r'],['scaling','s']]){let v=a[k].map((x,i)=>x+(b[k][i]-x)*f);m[prop]=BABYLON.Vector3.FromArray(v)}}}
+function createShape(type,name){if(!root)root=new BABYLON.TransformNode('objects',scene);const builders={cube:()=>BABYLON.MeshBuilder.CreateBox(name,{size:1},scene),ball:()=>BABYLON.MeshBuilder.CreateSphere(name,{diameter:1,segments:24},scene),cylinder:()=>BABYLON.MeshBuilder.CreateCylinder(name,{height:1.5,diameter:1,tessellation:32},scene),torus:()=>BABYLON.MeshBuilder.CreateTorus(name,{diameter:1.4,thickness:.35,tessellation:40},scene),ground:()=>BABYLON.MeshBuilder.CreateGround(name,{width:5,height:5},scene)};const mesh=(builders[type]||builders.cube)();mesh.parent=root;mesh.metadata={kind:type};const mat=new BABYLON.StandardMaterial('color'+mesh.uniqueId,scene);mat.diffuseColor=new BABYLON.Color3(.8,.6,.9);mesh.material=mat;return mesh}
+function updateParts(){const sel=$('part');sel.innerHTML='<option value="all">Вся модель</option>';for(const m of scene.meshes){if(!m.material)continue;const opt=document.createElement('option');opt.value=m.uniqueId.toString();opt.textContent=m.name||'Деталь '+m.uniqueId;sel.appendChild(opt)}updateTransforms()}function addShape(type){const mesh=createShape(type,({cube:'Куб',ball:'Шар',cylinder:'Цилиндр',torus:'Кольцо',ground:'Пол'})[type]+' '+(scene.meshes.length+1));if(type!=='ground')mesh.position.x=(scene.meshes.length-1)*.6;saveColors();updateParts();$('part').value=mesh.uniqueId.toString();updateTransforms();fit();msg('Добавлен объект: '+mesh.name)}function clear(){if(root){root.dispose(false,false);root=null}for(let m of scene.meshes.slice())m.dispose();original=[];keys={}}function saveColors(){original=scene.meshes.filter(m=>m.material).map(m=>[m,m.material])}function fit(){let min=new BABYLON.Vector3(Infinity,Infinity,Infinity),max=new BABYLON.Vector3(-Infinity,-Infinity,-Infinity);for(let m of scene.meshes){if(!m.getTotalVertices())continue;m.computeWorldMatrix(true);let b=m.getBoundingInfo().boundingBox;min=BABYLON.Vector3.Minimize(min,b.minimumWorld);max=BABYLON.Vector3.Maximize(max,b.maximumWorld)}if(!Number.isFinite(min.x))return;let center=min.add(max).scale(.5),size=max.subtract(min).length();let cam=scene.activeCamera;cam.target=center;cam.radius=Math.max(size*1.4,.5)}function download(url,name){let a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove()}window.addEventListener('load',init);
+
+// v2: embedded reference preview and non-destructive pixel-based texture recoloring.
+let smartMaterials=[],referenceData=null;
+const smartOriginals=new Map();
+function nearest(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);}
+function parseHex(h){return [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));}
+function imagePalette(img){let c=document.createElement('canvas');c.width=160;c.height=160;let x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,160,160);let d=x.getImageData(0,0,160,160).data,counts=new Map();for(let i=0;i<d.length;i+=16){if(d[i+3]<200)continue;let rgb=[d[i],d[i+1],d[i+2]],max=Math.max(...rgb),min=Math.min(...rgb);if(max<55||max-min<20)continue;let k=rgb.map(v=>Math.min(255,Math.round(v/24)*24)).join(',');counts.set(k,(counts.get(k)||0)+1)}let found=[];for(let [k] of [...counts].sort((a,b)=>b[1]-a[1])){let rgb=k.split(',').map(Number);if(found.every(v=>nearest(v,rgb)>55))found.push(rgb);if(found.length>=14)break}return found;}
+function closestColor(target,arr){return arr.reduce((best,c)=>nearest(target,c)<nearest(target,best)?c:best,arr[0]);}
+function recolorTexture(src,palette){let c=document.createElement('canvas');c.width=src.getSize().width;c.height=src.getSize().height;let ctx=c.getContext('2d',{willReadFrequently:true});return new Promise((resolve,reject)=>{try{src.readPixels().then(pixels=>{if(!pixels){reject(new Error('Текстура недоступна'));return}let im=ctx.createImageData(c.width,c.height);let data=im.data;for(let i=0;i<data.length;i+=4){let r=pixels[i],g=pixels[i+1],b=pixels[i+2],a=pixels[i+3];let max=Math.max(r,g,b),min=Math.min(r,g,b),sat=max-min;let original=[r,g,b];if(sat>28&&max>70){let t=closestColor(original,palette);let strength=.24; // conservative: retain all facial features and existing shading
+for(let j=0;j<3;j++)data[i+j]=Math.max(0,Math.min(255,Math.round(original[j]*(1-strength)+t[j]*strength)));
+}else{data[i]=r;data[i+1]=g;data[i+2]=b;}data[i+3]=a;}ctx.putImageData(im,0,0);resolve(c)}).catch(reject)}catch(e){reject(e)}})}
+window.addEventListener('load',()=>{
+const ref=$('reference');ref.addEventListener('change',e=>{let f=e.target.files[0];if(!f)return;let url=URL.createObjectURL(f);let im=$('referenceImg');im.onload=()=>{referenceData=imagePalette(im);$('referencePreview').style.display='block';URL.revokeObjectURL(url)};im.src=url;});
+$('smartUndo').onclick=()=>{for(let [mesh,material] of smartOriginals)if(!mesh.isDisposed())mesh.material=material;smartOriginals.clear();msg('Автоматическая раскраска отменена — исходные текстуры сохранены')};
+$('smartPaint').onclick=async()=>{if(!root){msg('Сначала открой Бубликса в GLB');return}if(!referenceData?.length){msg('Сначала загрузи рисунок-образец');return}let n=0;try{for(let mesh of scene.meshes){let mat=mesh.material;if(!mat)continue;let texture=mat.albedoTexture||mat.diffuseTexture;if(!texture||!texture.readPixels)continue;if(!smartOriginals.has(mesh))smartOriginals.set(mesh,mat);let cloned=mat.clone(mat.name+'_image_match');let newCanvas=await recolorTexture(texture,referenceData);let newTex=new BABYLON.DynamicTexture('imageMatched_'+mesh.uniqueId,{width:newCanvas.width,height:newCanvas.height},scene,false);newTex.getContext().drawImage(newCanvas,0,0);newTex.update(false);newTex.hasAlpha=texture.hasAlpha;newTex.uScale=texture.uScale;newTex.vScale=texture.vScale;if(cloned.albedoTexture)cloned.albedoTexture=newTex;else cloned.diffuseTexture=newTex;mesh.material=cloned;n++}msg(n?'Цвета картинки мягко перенесены на текстуру ('+n+' частей). Детали не распознаны автоматически.':'В этой модели нет доступной текстуры для автоматической раскраски.')}catch(e){msg('Ошибка обработки текстуры: '+e.message)}};
+});
+
+let aiImageData=null;
+document.getElementById('reference').addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{aiImageData=reader.result};reader.readAsDataURL(f)});
+document.getElementById('aiAnalyze').addEventListener('click',async()=>{
+const out=document.getElementById('aiResult');out.style.display='block';
+if(!aiImageData){out.textContent='Сначала загрузи оригинальную картинку персонажей.';return}
+const endpoint=document.getElementById('aiEndpoint').value.trim(),model=document.getElementById('aiModel').value.trim(),key=document.getElementById('aiKey').value.trim();
+if(!endpoint||!model){out.textContent='Укажи URL API и название модели. Бесплатный автономный ИИ в эту версию не встроен.';return}
+if(!/^https:\/\//i.test(endpoint)&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(endpoint)){out.textContent='Используй HTTPS API или локальный сервер localhost.';return}
+out.textContent='ИИ анализирует изображение…';
+try{const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',...(key?{'Authorization':'Bearer '+key}:{})},body:JSON.stringify({model,max_tokens:1200,messages:[{role:'system',content:'You analyze original 3D animation character references. Respond in Russian with concise structured JSON-like descriptions: character name, visible parts, precise colors in hex, and notes about which parts are ambiguous. Do not claim to edit 3D meshes.'},{role:'user',content:[{type:'text',text:'Identify Bublix, Zumi and Quixi if present, describe colors of distinct body parts, and give hex color suggestions for 3D texturing.'},{type:'image_url',image_url:{url:aiImageData}}]}]})});const data=await response.json();if(!response.ok)throw new Error(data.error?.message||'HTTP '+response.status);out.textContent=data.choices?.[0]?.message?.content||'Модель не вернула текстового ответа.';}catch(e){out.textContent='Не удалось подключиться к ИИ: '+e.message+'\nВозможны ограничения CORS, адреса API или ключа.'}
+});
+</script><script>
+window.addEventListener('load', async () => {
+  if (!window.BABYLON) return;
+  try {
+    const response = await fetch('./Bublix.glb');
+    if (!response.ok) throw new Error('HTTP '+response.status);
+    const blob = await response.blob();
+    const file = new File([blob], 'Bublix.glb', {type:'model/gltf-binary'});
+    const input = document.getElementById('file');
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    input.files = transfer.files;
+    input.dispatchEvent(new Event('change', {bubbles:true}));
+  } catch (error) {
+    document.getElementById('status').textContent='Выбери GLB вручную: '+error.message;
+  }
+});
+</script><script>
+// Bublix Cloud: public project URL and publishable browser key only.
+// Never put a Supabase secret/service_role key in this HTML.
+(()=>{
+'use strict';
+const BASE='https://ctvhrmjxzurxavbmsepn.supabase.co';
+const PUB='sb_publishable_eC40aLXyi3VJ3q8tNOEDJg_qzjzMuLd';
+const el=id=>document.getElementById(id);
+let session=null;
+const say=t=>el('cloudStatus').textContent=t;
+const headers=(auth=false)=>({'apikey':PUB,'Content-Type':'application/json',...(auth&&session?{'Authorization':'Bearer '+session.access_token}:{})});
+async function request(path,options={}){
+ const res=await fetch(BASE+path,options);const raw=await res.text();let data;
+ try{data=raw?JSON.parse(raw):null}catch{data={message:raw}}
+ if(!res.ok)throw Error(data?.msg||data?.message||data?.error_description||data?.error||('HTTP '+res.status));
+ return data;
+}
+async function login(){
+ const email=el('cloudEmail').value.trim(),password=el('cloudPassword').value;
+ if(!email||!password){say('Укажи email и пароль');return}
+ try{session=await request('/auth/v1/token?grant_type=password',{method:'POST',headers:headers(),body:JSON.stringify({email,password})});
+  el('cloudPassword').value='';el('cloudLogout').disabled=false;say('Вход выполнен: '+(session.user?.email||email));
+ }catch(e){say('Ошибка входа: '+e.message)}
+}
+async function ensureSession(){
+ if(!session?.access_token)throw Error('Сначала войди в аккаунт');
+ if(session.expires_at&&Date.now()/1000>session.expires_at-60&&session.refresh_token){
+  session=await request('/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:headers(),body:JSON.stringify({refresh_token:session.refresh_token})});
+ }
+ return session;
+}
+function snapshot(){
+ if(!window.scene){} // The studio keeps scene in its top-level lexical scope.
+ if(typeof scene==='undefined'||!scene)throw Error('Сначала дождись загрузки 3D-редактора');
+ const shapes=scene.meshes.filter(m=>m.metadata?.kind).map(m=>({kind:m.metadata.kind,name:m.name,p:m.position.asArray(),r:m.rotation.asArray(),s:m.scaling.asArray(),color:m.material?.diffuseColor?.toHexString()||'#ffffff'}));
+ return {version:1,shapes,keys:JSON.parse(JSON.stringify(keys)),note:'GLB-модели и медиафайлы пока не сохраняются в облаке'};
+}
+function restore(data){
+ if(typeof scene==='undefined'||!scene)throw Error('3D-редактор ещё не загружен');
+ clear();keys=data.keys||{};
+ for(const o of data.shapes||[]){const m=createShape(o.kind,o.name);if(o.p)m.position=BABYLON.Vector3.FromArray(o.p);if(o.r)m.rotation=BABYLON.Vector3.FromArray(o.r);if(o.s)m.scaling=BABYLON.Vector3.FromArray(o.s);if(o.color)m.material.diffuseColor=BABYLON.Color3.FromHexString(o.color)}
+ updateParts();fit();say('Проект открыт из облака');
+}
+el('cloudSignup').onclick=async()=>{
+ const email=el('cloudEmail').value.trim(),password=el('cloudPassword').value;
+ if(!email||password.length<6){say('Введи email и пароль не короче 6 символов');return}
+ try{const r=await request('/auth/v1/signup',{method:'POST',headers:headers(),body:JSON.stringify({email,password})});
+ say(r.access_token?'Аккаунт создан. Теперь нажми «Войти».':'Аккаунт создан. Проверь почту для подтверждения, затем войди.');el('cloudPassword').value='';
+ }catch(e){say('Ошибка регистрации: '+e.message)}
+};
+el('cloudLogin').onclick=login;
+el('cloudLogout').onclick=async()=>{if(session){try{await request('/auth/v1/logout',{method:'POST',headers:headers(true)})}catch{}}session=null;el('cloudLogout').disabled=true;el('cloudProjects').replaceChildren();say('Выход выполнен')};
+el('cloudSave').onclick=async()=>{
+ try{await ensureSession();const name=prompt('Название проекта','Мой мультфильм');if(name===null)return;
+ const payload={user_id:session.user.id,title:name.trim().slice(0,100)||'Мой мультфильм',project_data:snapshot()};
+ await request('/rest/v1/bublix_projects',{method:'POST',headers:{...headers(true),'Prefer':'return=minimal'},body:JSON.stringify(payload)});
+ say('Проект сохранён в облаке');
+ }catch(e){say('Ошибка сохранения: '+e.message+' (проверь SQL-таблицу и RLS)')}
+};
+el('cloudList').onclick=async()=>{
+ try{await ensureSession();const rows=await request('/rest/v1/bublix_projects?select=id,title,created_at,project_data&order=created_at.desc&limit=30',{headers:headers(true)});
+ const target=el('cloudProjects');target.replaceChildren();if(!rows.length){target.textContent='Пока нет сохранённых проектов';return}
+ for(const row of rows){const b=document.createElement('button');b.textContent='📂 '+row.title+' — '+new Date(row.created_at).toLocaleString('ru-RU');b.onclick=()=>{if(confirm('Открыть проект? Текущие несохранённые изменения исчезнут.'))try{restore(row.project_data)}catch(e){say('Ошибка открытия: '+e.message)}};target.appendChild(b)}say('Найдено проектов: '+rows.length)
+ }catch(e){say('Ошибка списка: '+e.message)}
+};
+})();
+</script><script>
+// Local text-only story assistant. No credentials are sent.
+(()=>{
+const button=document.getElementById('localGenerate');
+button.addEventListener('click',async()=>{
+ const output=document.getElementById('localResult');
+ const prompt=document.getElementById('localPrompt').value.trim()||'Придумай три короткие смешные сцены для мультфильма про жёлтого Бубликса для детей от 3 до 9 лет.';
+ output.style.display='block';output.textContent='ИИ придумывает сценарий…';button.disabled=true;
+ try{
+  const response=await fetch('http://127.0.0.1:11434/api/chat',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({model:'qwen3:0.6b',stream:false,think:false,messages:[
+    {role:'system',content:'Ты сценарист детских 3D-мультфильмов Bublix Studio. Отвечай только на русском языке. Пиши короткие, понятные, добрые, смешные сцены для детей 3–9 лет. Дай конкретные действия персонажей и диалоги.'},
+    {role:'user',content:prompt}]})
+  });
+  if(!response.ok)throw new Error('HTTP '+response.status);
+  const data=await response.json();
+  output.textContent=data.message?.content||'Модель не вернула ответ.';
+ }catch(error){output.textContent='Нет соединения с локальным Ollama: '+error.message+'\nПроверь, что Ollama запущена. Если она работает в командной строке, но не на сайте, нужно разрешить адрес GitHub Pages через OLLAMA_ORIGINS.';}
+ finally{button.disabled=false;}
+});
+})();
+</script>
+<script>
+// Bublix first animated episode: independent of Ollama, with captions and recording.
+(()=>{
+ const aside=document.querySelector('aside');
+ const section=document.createElement('section');
+ section.innerHTML=`<hr><h3>🎥 Первый мультфильм — Бубликс и звёздочка</h3>
+ <small>Готовая 30-секундная 3D-сцена: прогулка, прыжки, волшебная звезда и танец. Записывай через обычную кнопку «Начать запись WebM».</small>
+ <button id="episodeStart" style="background:#16a085">▶ Смотреть мультфильм (30 с)</button>
+ <button id="episodeRecord">⏺ Записать мультфильм WebM</button>
+ <button id="episodeStop">⏹ Остановить мультфильм</button>
+ <div id="episodeStatus" style="font-size:12px;color:#b8efcf">Готов к запуску</div>`;
+ const anchor=document.getElementById('localPrompt').closest('h3') || document.querySelector('#localPrompt');
+ // Insert immediately before the local AI section, preserving all existing controls.
+ const h=Array.from(aside.querySelectorAll('h3')).find(x=>x.textContent.includes('Локальный ИИ'));
+ aside.insertBefore(section,h);
+ const caption=document.createElement('div');
+ caption.style.cssText='position:absolute;bottom:55px;left:8%;right:8%;padding:12px 18px;text-align:center;background:#0b1024cc;border-radius:14px;font:bold 22px Segoe UI,Arial;color:#fff;text-shadow:0 2px 4px #000;display:none;pointer-events:none;z-index:3';
+ document.querySelector('main').appendChild(caption);
+ let active=false,started=0,star=null,starMat=null,originalPos=null,originalRot=null,originalScale=null,recMode=false,raf=0;
+ const setStatus=t=>document.getElementById('episodeStatus').textContent=t;
+ const lines=[[0,'Бубликс: Какой чудесный день!'],[5,'Бубликс: Ой! Что это светится?'],[10,'Звёздочка: Привет, Бубликс!'],[15,'Бубликс: Ура! Давай дружить!'],[21,'Звёздочка: Потанцуем вместе?'],[26,'Бубликс: Да! До новых встреч!']];
+ function cleanup(){
+  active=false;cancelAnimationFrame(raf);caption.style.display='none';
+  if(root&&originalPos){root.position.copyFrom(originalPos);root.rotation.copyFrom(originalRot);root.scaling.copyFrom(originalScale)}
+  if(star){star.dispose();star=null}if(starMat){starMat.dispose();starMat=null}
+  if(recMode){const stop=document.getElementById('stopRecord');if(!stop.disabled)stop.click();recMode=false}
+  setStatus('Мультфильм завершён');
+ }
+ function frame(){
+  if(!active)return;
+  if(!root||!scene){cleanup();return}
+  const t=(performance.now()-started)/1000;
+  if(t>=30){cleanup();return}
+  const ease=x=>x*x*(3-2*x);
+  // Character: stroll, discover, jump and dance. Motion of the whole GLB works even without a skeleton.
+  let x=0,y=0,turn=0;
+  if(t<5){x=-0.45+0.16*t;y=0.06*Math.abs(Math.sin(t*7));turn=0.12*Math.sin(t*4)}
+  else if(t<10){x=0.35;turn=0.25*Math.sin(t*2)}
+  else if(t<16){x=0.35;y=0.55*Math.abs(Math.sin((t-10)*3));turn=0.25*Math.sin(t*3)}
+  else if(t<21){x=0.15;y=0.06*Math.sin(t*5);turn=0.3*Math.sin(t*4)}
+  else {x=0.18+0.25*Math.sin((t-21)*2);y=0.22*Math.abs(Math.sin((t-21)*5));turn=0.45*Math.sin((t-21)*3)}
+  root.position.copyFrom(originalPos);root.position.x+=x;root.position.y+=y;
+  root.rotation.copyFrom(originalRot);root.rotation.y+=turn;
+  if(star){star.position.x=1.1+0.3*Math.sin(t*1.7);star.position.y=1.3+0.25*Math.sin(t*2.4);star.position.z=0.3;star.rotation.z+=0.03;star.scaling.setAll(t<5?0.001:Math.min(1,(t-5)*1.5));}
+  const current=lines.reduce((a,b)=>t>=b[0]?b:a,lines[0]);caption.textContent=current[1];caption.style.display='block';
+  setStatus('Идёт мультфильм: '+Math.floor(t+1)+' / 30 секунд');
+  raf=requestAnimationFrame(frame);
+ }
+ function start(record){
+  if(typeof scene==='undefined'||!scene||!root){setStatus('Сначала дождись загрузки Бубликса (Bublix.glb)');return}
+  if(active)cleanup();
+  if(typeof spin!=='undefined')spin=false;
+  if(typeof playing!=='undefined')playing=false;
+  originalPos=root.position.clone();originalRot=root.rotation.clone();originalScale=root.scaling.clone();
+  star=BABYLON.MeshBuilder.CreatePolyhedron('Волшебная звёздочка',{type:2,size:0.28},scene);
+  starMat=new BABYLON.StandardMaterial('Золотое сияние',scene);
+  starMat.diffuseColor=new BABYLON.Color3(1,.83,.1);starMat.emissiveColor=new BABYLON.Color3(.8,.48,.04);
+  star.material=starMat;
+  active=true;started=performance.now();recMode=!!record;
+  if(record){const btn=document.getElementById('record');if(btn.disabled){recMode=false;setStatus('Запись уже идёт');}else btn.click()}
+  frame();
+ }
+ document.getElementById('episodeStart').onclick=()=>start(false);
+ document.getElementById('episodeRecord').onclick=()=>start(true);
+ document.getElementById('episodeStop').onclick=cleanup;
+})();
+</script>
+</body></html>
